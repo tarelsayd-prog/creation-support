@@ -59,7 +59,7 @@ if st.button("Categorize SKUs"):
         with st.spinner("Categorizing... this might take a moment."):
             try:
                 # Call the AI model
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 response = model.generate_content(MASTER_PROMPT + "\n" + sku_input)
                 
                 # Parse the CSV response into a Pandas DataFrame
