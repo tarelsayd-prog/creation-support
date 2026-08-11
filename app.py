@@ -5,7 +5,7 @@ import io
 
 # --- Configure the Page ---
 st.set_page_config(page_title="SKU Categorizer & Describer", layout="centered")
-st.title("📦 AI Inventory Categorizer")
+st.title("📦 AI Inventory Categorizer (Multilingual)")
 
 # --- API Key Setup ---
 api_key = st.secrets.get("GEMINI_API_KEY", "")
@@ -16,14 +16,18 @@ else:
 
 # --- The Master Prompt ---
 MASTER_PROMPT = """
-Please act as an expert inventory categorizer and copywriter. I will provide you with a list of SKUs. 
-You must organize them into a CSV format with the following four columns: Title, Type, Subtype, Description.
+Please act as an expert inventory categorizer, e-commerce copywriter, and professional English-to-Arabic translator. I will provide you with a list of SKUs. 
+You must organize them into a CSV format with EXACTLY the following 11 columns: 
+Title, Type, Subtype, Description_EN, Description_AR, Feature_Bullet_1_EN, Feature_Bullet_1_AR, Feature_Bullet_2_EN, Feature_Bullet_2_AR, Feature_Bullet_3_EN, Feature_Bullet_3_AR
 
 Rules:
 1. Strictly use only the Types and Subtypes listed below.
 2. If an item is not a toy (e.g., adult apparel, baby feeding bottles), leave the Type and Subtype columns with the keyword (Not Toy).
-3. In the Description column, write a powerful and catchy one-paragraph product description suitable for an e-commerce platform based on the Title. Ensure the description text is enclosed in double quotes so that any commas inside the description do not break the CSV layout.
-4. Return ONLY valid CSV data. Do not include markdown formatting, explanations, or any other text.
+3. Description_EN: Write a powerful and catchy one-paragraph product description suitable for an e-commerce platform based on the Title.
+4. Description_AR: Write a natural, highly engaging Arabic translation of that e-commerce product description.
+5. Feature_Bullet_1_EN, Feature_Bullet_2_EN, Feature_Bullet_3_EN: Write three distinct, compelling key features/benefits for the product in English.
+6. Feature_Bullet_1_AR, Feature_Bullet_2_AR, Feature_Bullet_3_AR: Provide accurate and professional Arabic translations for the three feature bullets.
+7. CRITICAL: Return ONLY valid CSV data. Do not include markdown formatting, explanations, or any other text. You MUST enclose any text containing commas, newlines, or special characters in double quotes ("") so that it does not break the CSV layout.
 
 Types and Subtypes:
 - Pretend Play: Beauty Playsets, Tools, Magnet & Felt Playboards, Shops & Accessories, Money & Banking, Doctor Playsets, Household Toys, Kitchen & Food
@@ -49,7 +53,7 @@ Here is the list of SKUs to process:
 """
 
 # --- App UI ---
-st.write("Paste your list of SKUs or product titles below, and the AI will categorize and describe them in a table.")
+st.write("Paste your list of SKUs below. The AI will categorize them and generate English/Arabic descriptions and feature bullets.")
 
 sku_input = st.text_area("Enter SKUs (one per line):", height=200)
 
@@ -57,7 +61,7 @@ if st.button("Categorize & Describe SKUs"):
     if not sku_input.strip():
         st.warning("Please enter some SKUs first.")
     else:
-        with st.spinner("Processing... this might take a moment since we are generating descriptions."):
+        with st.spinner("Processing... generating categories, descriptions, and Arabic translations!"):
             try:
                 # Using the latest model you successfully set up
                 model = genai.GenerativeModel('gemini-3.5-flash-lite')
@@ -72,11 +76,11 @@ if st.button("Categorize & Describe SKUs"):
                 st.dataframe(df, use_container_width=True)
                 
                 # Allow user to download the table
-                csv_export = df.to_csv(index=False).encode('utf-8')
+                csv_export = df.to_csv(index=False).encode('utf-8-sig') # Added utf-8-sig so Excel reads Arabic correctly
                 st.download_button(
                     label="Download Data as CSV",
                     data=csv_export,
-                    file_name='categorized_and_described_skus.csv',
+                    file_name='multilingual_skus.csv',
                     mime='text/csv',
                 )
             except Exception as e:
