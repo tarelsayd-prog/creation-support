@@ -4,11 +4,10 @@ import pandas as pd
 import io
 
 # --- Configure the Page ---
-st.set_page_config(page_title="SKU Categorizer", layout="centered")
+st.set_page_config(page_title="SKU Categorizer & Describer", layout="centered")
 st.title("📦 AI Inventory Categorizer")
 
 # --- API Key Setup ---
-# In Streamlit Cloud, you store this in the Secrets management, not in the code!
 api_key = st.secrets.get("GEMINI_API_KEY", "")
 if api_key:
     genai.configure(api_key=api_key)
@@ -17,12 +16,14 @@ else:
 
 # --- The Master Prompt ---
 MASTER_PROMPT = """
-Please act as an expert inventory categorizer. I will provide you with a list of SKUs. You must organize them into a CSV format with the columns: Title, Type, Subtype.
+Please act as an expert inventory categorizer and copywriter. I will provide you with a list of SKUs. 
+You must organize them into a CSV format with the following four columns: Title, Type, Subtype, Description.
 
 Rules:
 1. Strictly use only the Types and Subtypes listed below.
 2. If an item is not a toy (e.g., adult apparel, baby feeding bottles), leave the Type and Subtype columns with the keyword (Not Toy).
-3. Return ONLY valid CSV data. Do not include markdown formatting, explanations, or any other text.
+3. In the Description column, write a powerful and catchy one-paragraph product description suitable for an e-commerce platform based on the Title. Ensure the description text is enclosed in double quotes so that any commas inside the description do not break the CSV layout.
+4. Return ONLY valid CSV data. Do not include markdown formatting, explanations, or any other text.
 
 Types and Subtypes:
 - Pretend Play: Beauty Playsets, Tools, Magnet & Felt Playboards, Shops & Accessories, Money & Banking, Doctor Playsets, Household Toys, Kitchen & Food
@@ -44,21 +45,21 @@ Types and Subtypes:
 - Games: Handheld Games, Standard Playing Card Decks, Dice & Gaming Dice, Board Games, Game Accessories, Card Games, Trading Cards, Battling Tops
 - Electronics For Kids: Plug & Play Video Games, Music Players & Karaoke, Electronic Pets, Rc Figures & Robots, Electronic Toys, Cameras & Camcorders
 
-Here is the list of SKUs to categorize:
+Here is the list of SKUs to process:
 """
 
 # --- App UI ---
-st.write("Paste your list of SKUs or product titles below, and the AI will categorize them into a table.")
+st.write("Paste your list of SKUs or product titles below, and the AI will categorize and describe them in a table.")
 
 sku_input = st.text_area("Enter SKUs (one per line):", height=200)
 
-if st.button("Categorize SKUs"):
+if st.button("Categorize & Describe SKUs"):
     if not sku_input.strip():
         st.warning("Please enter some SKUs first.")
     else:
-        with st.spinner("Categorizing... this might take a moment."):
+        with st.spinner("Processing... this might take a moment since we are generating descriptions."):
             try:
-                # Call the AI model
+                # Using the latest model you successfully set up
                 model = genai.GenerativeModel('gemini-3.5-flash-lite')
                 response = model.generate_content(MASTER_PROMPT + "\n" + sku_input)
                 
@@ -67,7 +68,7 @@ if st.button("Categorize SKUs"):
                 df = pd.read_csv(csv_data)
                 
                 # Display the table
-                st.success("Categorization Complete!")
+                st.success("Processing Complete!")
                 st.dataframe(df, use_container_width=True)
                 
                 # Allow user to download the table
@@ -75,7 +76,7 @@ if st.button("Categorize SKUs"):
                 st.download_button(
                     label="Download Data as CSV",
                     data=csv_export,
-                    file_name='categorized_skus.csv',
+                    file_name='categorized_and_described_skus.csv',
                     mime='text/csv',
                 )
             except Exception as e:
